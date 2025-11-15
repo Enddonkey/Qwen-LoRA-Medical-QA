@@ -1,0 +1,54 @@
+{
+  "add_prefix_space": false,
+  "added_tokens_decoder": {
+    "0": {
+      "content": "<unk>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    "1": {
+      "content": "<s>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    "2": {
+      "content": "</s>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    "3": {
+      "content": "<pad>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    }
+  },
+  "bos_token": "<s>",
+  "clean_up_tokenization_spaces": false,
+  "eos_token": "</s>",
+  "extra_special_tokens": {},
+  "max_length": 2048,
+  "merges_file": null,
+  "model_max_length": 2048,
+  "pad_to_multiple_of": null,
+  "pad_token": "</s>",
+  "pad_token_type_id": 0,
+  "padding_side": "right",
+  "stride": 0,
+  "tokenizer_class": "BloomTokenizer",
+  "truncation_side": "right",
+  "truncation_strategy": "longest_first",
+  "unk_token": "<unk>",
+  "vocab_file": null
+}
