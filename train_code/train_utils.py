@@ -1,5 +1,6 @@
 # ==============================================================================
 # 共享训练工具模块 - 所有消融实验共用
+# 支持 ChatML (Qwen) 和 Phoenix 两种对话模板
 # ==============================================================================
 import os
 # 设置代理（解决HuggingFace连接问题）
@@ -16,41 +17,109 @@ from tqdm import tqdm
 from datasets import load_dataset
 from peft import prepare_model_for_kbit_training, LoraConfig, get_peft_model, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainerCallback
-from fastchat.conversation import get_conv_template
 from torch.utils.data import Dataset
 
 IGNORE_INDEX = -100
+
+# ======================== ChatML 格式 (Qwen原生) ========================
+
+CHATML_SYSTEM_MSG = "你是一个专业的医疗健康助手，能够准确回答各类医学问题。"
+
+
+class ChatMLDataset(Dataset):
+    """ChatML格式数据集 - 适用于Qwen系列模型"""
+    def __init__(self, data, tokenizer, max_length=1024):
+        super().__init__()
+        self.tokenizer = tokenizer
+        self.data = data
+        self.max_length = max_length
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        item = self.data[index]
+        conversations = item['conversations']
+
+        input_ids = []
+        labels = []
+
+        # System message (masked)
+        sys_text = f"<|im_start|>system\n{CHATML_SYSTEM_MSG}<|im_end|>\n"
+        sys_tokens = self.tokenizer.encode(sys_text, add_special_tokens=False)
+        input_ids.extend(sys_tokens)
+        labels.extend([IGNORE_INDEX] * len(sys_tokens))
+
+        for msg in conversations:
+            if msg['role'] == 'human':
+                # User message (masked)
+                user_text = f"<|im_start|>user\n{msg['value']}<|im_end|>\n"
+                user_tokens = self.tokenizer.encode(user_text, add_special_tokens=False)
+                input_ids.extend(user_tokens)
+                labels.extend([IGNORE_INDEX] * len(user_tokens))
+            elif msg['role'] == 'gpt':
+                # Assistant header (masked)
+                header_text = f"<|im_start|>assistant\n"
+                header_tokens = self.tokenizer.encode(header_text, add_special_tokens=False)
+                input_ids.extend(header_tokens)
+                labels.extend([IGNORE_INDEX] * len(header_tokens))
+
+                # Assistant response (NOT masked - training target)
+                response_text = f"{msg['value']}<|im_end|>\n"
+                response_tokens = self.tokenizer.encode(response_text, add_special_tokens=False)
+                input_ids.extend(response_tokens)
+                labels.extend(response_tokens)
+
+        # Truncate
+        input_ids = input_ids[:self.max_length]
+        labels = labels[:self.max_length]
+
+        return dict(
+            input_ids=torch.tensor(input_ids, dtype=torch.long),
+            labels=torch.tensor(labels, dtype=torch.long)
+        )
+
+
+def chatml_format_query(question):
+    """将问题格式化为ChatML推理格式"""
+    return (f"<|im_start|>system\n{CHATML_SYSTEM_MSG}<|im_end|>\n"
+            f"<|im_start|>user\n{question}<|im_end|>\n"
+            f"<|im_start|>assistant\n")
+
+
+# ======================== Phoenix 格式 (向后兼容) ========================
+
 DEFAULT_BOS_TOKEN, DEFAULT_EOS_TOKEN = "<s>", "</s>"
-default_conversation = get_conv_template('phoenix')
+
+try:
+    from fastchat.conversation import get_conv_template
+    default_conversation = get_conv_template('phoenix')
+    HAS_FASTCHAT = True
+except ImportError:
+    HAS_FASTCHAT = False
 
 
-class GPUMemoryCallback(TrainerCallback):
-    def __init__(self):
-        self.gpu_memory_records = []
-    def on_step_end(self, args, state, control, **kwargs):
-        if torch.cuda.is_available():
-            gpu_mem = torch.cuda.max_memory_allocated() / (1024**3)
-            self.gpu_memory_records.append({'step': state.global_step, 'gpu_memory_gb': round(gpu_mem, 2)})
-
-
-class InstructDataset(Dataset):
+class PhoenixDataset(Dataset):
+    """Phoenix格式数据集 - 向后兼容旧实验"""
     def __init__(self, data, tokenizer):
         super().__init__()
         self.tokenizer = tokenizer
         self.data = data
+
     def __len__(self):
         return len(self.data)
+
     def __getitem__(self, index):
         sources = self.data[index]
         if isinstance(index, int):
             sources = [sources]
-        data_dict = preprocess([e['conversations'] for e in sources], self.tokenizer)
+        data_dict = _preprocess_phoenix([e['conversations'] for e in sources], self.tokenizer)
         if isinstance(index, int):
             data_dict = dict(input_ids=data_dict["input_ids"][0], labels=data_dict["labels"][0])
         return data_dict
 
 
-def preprocess(sources, tokenizer, max_length=1024):
+def _preprocess_phoenix(sources, tokenizer, max_length=1024):
     conversations, intermediates = [], []
     for source in sources:
         header = f"{default_conversation.system_message}"
@@ -94,6 +163,17 @@ def _tokenize_fn(strings, tokenizer):
     return dict(input_ids=input_ids, labels=input_ids, input_ids_lens=lens, labels_lens=lens)
 
 
+# ======================== 通用工具函数 ========================
+
+class GPUMemoryCallback(TrainerCallback):
+    def __init__(self):
+        self.gpu_memory_records = []
+    def on_step_end(self, args, state, control, **kwargs):
+        if torch.cuda.is_available():
+            gpu_mem = torch.cuda.max_memory_allocated() / (1024**3)
+            self.gpu_memory_records.append({'step': state.global_step, 'gpu_memory_gb': round(gpu_mem, 2)})
+
+
 @dataclass
 class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
@@ -104,15 +184,25 @@ class DataCollatorForSupervisedDataset(object):
         return dict(input_ids=input_ids, labels=labels, attention_mask=input_ids.ne(self.tokenizer.pad_token_id))
 
 
-def load_and_preprocess_data(tokenizer, train_sample_size, test_split_ratio=0.1):
+def load_and_preprocess_data(tokenizer, train_sample_size, test_split_ratio=0.1, use_chatml=True):
+    """加载并预处理数据集
+    Args:
+        use_chatml: True=使用ChatML格式(Qwen原生), False=使用Phoenix格式(向后兼容)
+    """
     dataset = load_dataset("FreedomIntelligence/Huatuo26M-Lite")
     dataset = dataset['train'].map(lambda s: {"conversations": [
         {"role": "human", "value": s['question']}, {"role": "gpt", "value": s['answer']}]}, batched=False)
     dataset = dataset.select(range(min(train_sample_size, len(dataset))))
     split = dataset.train_test_split(test_size=test_split_ratio)
-    train_ds = InstructDataset(split['train'], tokenizer)
-    val_ds = InstructDataset(split['test'], tokenizer)
-    print(f"训练集样本数: {len(train_ds)}, 验证集样本数: {len(val_ds)}")
+
+    if use_chatml:
+        train_ds = ChatMLDataset(split['train'], tokenizer)
+        val_ds = ChatMLDataset(split['test'], tokenizer)
+        print(f"[ChatML格式] 训练集样本数: {len(train_ds)}, 验证集样本数: {len(val_ds)}")
+    else:
+        train_ds = PhoenixDataset(split['train'], tokenizer)
+        val_ds = PhoenixDataset(split['test'], tokenizer)
+        print(f"[Phoenix格式] 训练集样本数: {len(train_ds)}, 验证集样本数: {len(val_ds)}")
     return train_ds, val_ds
 
 
@@ -121,6 +211,8 @@ def check_dataset(tokenizer, train_dataset, val_dataset, num_samples=3):
     print("\n" + "=" * 80)
     print("数据集检查 (Data Sanity Check)")
     print("=" * 80)
+    fmt = "ChatML" if isinstance(train_dataset, ChatMLDataset) else "Phoenix"
+    print(f"\n[0] 对话模板: {fmt}")
     print(f"\n[1] 基本统计: 训练集={len(train_dataset)}, 验证集={len(val_dataset)}")
     for i in range(min(num_samples, len(train_dataset))):
         sample = train_dataset[i]
@@ -129,8 +221,8 @@ def check_dataset(tokenizer, train_dataset, val_dataset, num_samples=3):
         print(f"\n[2] 样本{i}: input_ids长度={len(ids)}, labels长度={len(labs)}, 有效label={len(valid_labs)}")
         if len(valid_labs) == 0:
             print("    ⚠️ 警告: 无有效label!"); continue
-        print(f"    input解码(前150字): {tokenizer.decode(ids, skip_special_tokens=False)[:150]}...")
-        print(f"    label解码(前150字): {tokenizer.decode(valid_labs, skip_special_tokens=False)[:150]}...")
+        print(f"    input解码(前200字): {tokenizer.decode(ids, skip_special_tokens=False)[:200]}...")
+        print(f"    label解码(前200字): {tokenizer.decode(valid_labs, skip_special_tokens=False)[:200]}...")
     total_tok, total_val, empty = 0, 0, 0
     for i in range(min(20, len(train_dataset))):
         labs = train_dataset[i]['labels']
@@ -206,20 +298,31 @@ def save_metrics(cfg, t_params, total_params, t_time, peak_mem, gpu_recs, eval_m
 
 
 @torch.no_grad()
-def generate_answers(query_list, tokenizer, model):
-    def conv_fmt(q):
-        conv = get_conv_template('phoenix')
-        conv.append_message(conv.roles[0], q)
-        conv.append_message(conv.roles[1], None)
-        return conv.get_prompt()
-    formatted = [conv_fmt(q) for q in query_list]
-    input_ids = tokenizer(formatted, padding=True, truncation=True, return_tensors="pt", add_special_tokens=False).input_ids.to("cuda")
+def generate_answers(query_list, tokenizer, model, use_chatml=True):
+    """生成回答
+    Args:
+        use_chatml: True=使用ChatML格式, False=使用Phoenix格式
+    """
+    if use_chatml:
+        formatted = [chatml_format_query(q) for q in query_list]
+    else:
+        def conv_fmt(q):
+            conv = get_conv_template('phoenix')
+            conv.append_message(conv.roles[0], q)
+            conv.append_message(conv.roles[1], None)
+            return conv.get_prompt()
+        formatted = [conv_fmt(q) for q in query_list]
+
+    input_ids = tokenizer(formatted, padding=True, truncation=True, return_tensors="pt",
+                          add_special_tokens=False).input_ids.to("cuda")
     output_ids = []
     for i in tqdm(range(len(input_ids))):
-        out = model.generate(input_ids=input_ids[i:i+1], do_sample=False, max_new_tokens=512, repetition_penalty=1.0)
+        out = model.generate(input_ids=input_ids[i:i+1], do_sample=False,
+                             max_new_tokens=512, repetition_penalty=1.0)
         output_ids.append(out[0])
     responses = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
-    return [r[len(q):].strip() for q, r in zip(formatted, responses)]
+    return [r[len(tokenizer.decode(input_ids[i], skip_special_tokens=True)):].strip()
+            for i, r in enumerate(responses)]
 
 
 def get_bnb_config():
