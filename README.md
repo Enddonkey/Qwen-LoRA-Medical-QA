@@ -1,262 +1,167 @@
-# NLP课程作业3 - 大语言模型微调实验
+# Qwen-LoRA-Medical-QA
+
+基于 **Qwen3-4B-Instruct** 的中文医学问答微调项目，系统性地探索 LoRA 参数高效微调与全参数微调的性能差异，并通过消融实验分析不同 LoRA target modules 配置的影响。
 
 ## 项目概述
 
-本项目是香港中文大学深圳 自然语言处理课程的第三次作业，专注于大语言模型的微调技术。项目使用Qwen3-4B-Instruct作为基础模型，在中文医学问答数据集上进行监督微调，探索不同参数配置对模型性能的影响。
+本项目在 Huatuo26M-Lite 中文医学问答数据集上对 Qwen3-4B-Instruct 进行监督微调，核心实验包括：
 
-### 主要特点
+1. **LoRA 消融实验**：固定 7000 训练样本，对比不同 target modules 配置（QV / QKV / QKVO）
+2. **微调方法对比**：LoRA (QLoRA 4-bit) vs 全参数微调 (bf16)，记录训练时间、Loss、GPU 占用等指标
+3. **GPT-4 自动评估**：从 500 条测试集中采样 50 条，通过 GPT-4 对比评估模型输出质量
 
-- **基础模型**: Qwen/Qwen3-4B-Instruct
-- **微调技术**: LoRA (Low-Rank Adaptation) 参数高效微调
-- **优化策略**: 4位量化技术优化内存使用
-- **应用领域**: 中文医学问答
-- **评估方法**: ChatGPT自动评估系统
+### 为什么选择 7000 条训练样本？
 
-## 技术架构
+基于前期实验观察：
+- **15000 样本 / 5 epoch**：训练时间长，存在过拟合风险
+- **25000~50000 样本 / 1 epoch**：数据量大但单 epoch 学习不充分，边际收益递减
+- **7000 样本 / 1 epoch**：在消费级 GPU (16GB) 上约 30-35 分钟完成训练，Loss 在 ~200 步内收敛至 1.8 左右，验证集 perplexity 约 6.0，是效率与效果的最佳平衡点。同时该规模便于快速迭代消融实验，在有限算力下完成多组对比。
 
-### 模型配置
-- **基础模型**: Qwen3-4B-Instruct
-- **微调方法**: LoRA (Low-Rank Adaptation)
-- **量化技术**: 4-bit量化 (BitsAndBytesConfig)
-- **优化器**: AdamW
-- **学习率调度**: Linear warmup + decay
+## 消融实验结果
 
-### 数据集
-- **训练数据**: Huatuo26M-Lite中文医学问答数据集
-- **测试数据**: zh_med.json (20个中文医学问答对)
-- **数据格式**: 问答对格式，支持多轮对话
+### 训练指标对比
 
-### 实验设计
-项目包含多个实验变体，探索不同参数对模型性能的影响：
+| 实验 | 方法 | Target Modules | 可训练参数 | 训练时间 | GPU峰值 | Eval Loss | PPL |
+|------|------|---------------|-----------|---------|---------|-----------|-----|
+| LoRA-QV | QLoRA 4-bit | q_proj, v_proj | 5.90M (0.27%) | 35.0 min | 15.33 GB | 1.7991 | 6.04 |
+| LoRA-QKV | QLoRA 4-bit | q_proj, k_proj, v_proj | 7.96M (0.36%) | 30.6 min | 15.35 GB | 1.7817 | 5.94 |
+| LoRA-QKVO | QLoRA 4-bit | q_proj, k_proj, v_proj, o_proj | 11.80M (0.53%) | 34.4 min | 13.03 GB | 1.8074 | 6.09 |
+| Full-FT | bf16 AdamW | ALL | 3839M (100%) | 待运行 | 待运行 | 待运行 | 待运行 |
 
-1. **Baseline模型**: 基础配置
-2. **Phoenix模型**: 使用Phoenix对话模板
-3. **Llama模型**: 基于Llama架构的对比实验
-4. **Qwen改进版本**: 
-   - qwen_improve_1: size=15000, epoch=5, alpha=16
-   - qwen_improve_2: size=25000, epoch=1, alpha=32
-   - qwen_improve_3: size=50000, epoch=1, alpha=32
+### GPT-4 评估结果（模型 vs Baseline）
+
+| 实验 | 采样数 | Baseline胜 | Model胜 | 平局 | 模型胜率 |
+|------|--------|-----------|---------|------|---------|
+| LoRA-QV | 50 | 16 | 32 | 0 | **66.7%** |
+| LoRA-QKV | 50 | 15 | 31 | 4 | **62.0%** |
+| LoRA-QKVO | 50 | 16 | 31 | 3 | **62.0%** |
+
+### 关键发现
+
+- **LoRA-QV 配置最优**：仅用 5.9M 参数（0.27%）即达到最高 66.7% 胜率，参数效率最高
+- **增加 target modules 未必更好**：QKV 和 QKVO 的 eval loss 和胜率并未显著优于 QV，说明在小数据量下额外参数可能引入噪声
+- **训练效率**：三种 LoRA 配置训练时间均在 30-35 分钟，GPU 占用 13-15 GB，适合消费级显卡
 
 ## 项目结构
 
 ```
-├── README.md                           # 项目说明文档
-├── NLP_course_Assignment_3.pdf         # 课程作业要求
-├── zh_med.json                         # 测试数据集
-├── openai_key.txt                      # OpenAI API密钥
-├── "qwen_lora_baseline_ipynb".ipynb    # Jupyter notebook
-├── train_code/                         # 训练脚本目录
-│   ├── qwen_baseline.py                # 基线模型训练
-│   ├── phoenix_lora.py                 # Phoenix模型训练
-│   ├── llama_lora.py                   # Llama模型训练
-│   ├── qwen_improve(size=15000 epoch=5 alpha=16).py
-│   ├── qwen_improve(size=25000 epoch=1 alpha=32).py
-│   └── qwen_improve(size=50000 epoch=1 alpha=32).py
-├── train_result/                       # 训练结果目录
-│   ├── baseline/                       # 基线模型结果
-│   ├── phoenix_lora/                   # Phoenix模型结果
-│   ├── llama_lora/                     # Llama模型结果
-│   ├── qwen_improve(size=15000 epoch=5 alpha=16)/
-│   ├── qwen_improve(size=25000 epoch=1 alpha=32)/
-│   └── qwen_improve(size=50000 epoch=1 alpha=32)/
-└── evaluate/                           # 评估脚本和结果
-    ├── src/                            # 评估源代码
-    │   ├── evaluate_saved_data.py      # 主要评估脚本
-    │   ├── evaluate_saved_data_score.py
-    │   └── clean_saved_data.py
-    ├── evaluation_results.json         # 综合评估结果
-    ├── baseline.json                   # 基线模型评估
-    ├── phoenix.json                    # Phoenix模型评估
-    ├── qwen_improve_1(size=15000 epoch=5 alpha=16).json
-    ├── qwen_improve_2(size=25000 epoch=1 alpha=32).json
-    ├── qwen_improve_3(size=50000 epoch=1 alpha=32).json
-    └── evaluation_plots/               # 评估结果可视化
-        ├── overall_comparison.png      # 整体性能对比
-        ├── baseline_comparison.png     # 基线模型对比
-        ├── baseline_pie.png           # 基线模型饼图
-        └── ...                        # 其他模型的对比图表
+├── README.md                          # 项目说明
+├── requirements.txt                   # 依赖包
+├── run_all.bat                        # 一键运行脚本
+├── train_code/                        # 训练脚本
+│   ├── train_utils.py                 # 共享工具模块
+│   ├── qwen_lora_7k_qv.py            # LoRA-QV 消融实验
+│   ├── qwen_lora_7k_qkv.py           # LoRA-QKV 消融实验
+│   ├── qwen_lora_7k_qkvo.py          # LoRA-QKVO 消融实验
+│   ├── qwen_full_finetune_7k.py       # 全参数微调
+│   ├── generate_test_dataset.py       # 测试集生成
+│   └── run_inference_only.py          # 独立推理脚本
+├── train_result/                      # 训练结果
+│   ├── lora_7k_qv/                    # QV 实验结果
+│   ├── lora_7k_qkv/                   # QKV 实验结果
+│   ├── lora_7k_qkvo/                  # QKVO 实验结果
+│   └── full_finetune_7k/              # 全参数微调结果
+└── evaluate/                          # 评估模块
+    ├── src/
+    │   ├── evaluate_ablation.py       # GPT-4 消融评估
+    │   └── compare_ablation.py        # 训练指标对比可视化
+    ├── ablation_evaluation_results.json
+    └── ablation_plots/                # 对比图表
 ```
 
 ## 环境配置
 
-### 依赖要求
+### 硬件要求
+- **LoRA 微调**: ≥ 16GB 显存 GPU（如 RTX 4080/4090）
+- **全参数微调**: ≥ 16GB 显存 GPU（使用 gradient checkpointing + 8-bit AdamW）
+
+### 安装依赖
 ```bash
-torch=2.7.0+cu128
-transformers=5.0.0.dev0
-peft=0.18.0rc1.dev0
-bitsandbytes=0.48.2
-datasets=4.0.0
-accelerate=1.12.0.dev0
-openai=2.8.0
-matplotlib=3.10.7
-
-```
-
-### 安装步骤
-```bash
-# 克隆项目
-git clone <repository-url>
-cd NLP-HW3
-
-# 安装依赖
 pip install -r requirements.txt
-
-# 配置OpenAI API密钥
-echo "your-openai-api-key" > openai_key.txt
 ```
+
+主要依赖：
+- `torch >= 2.7.0`
+- `transformers >= 5.0.0`
+- `peft >= 0.18.0`
+- `bitsandbytes >= 0.48.0`
+- `datasets >= 4.0.0`
 
 ## 使用方法
 
-### 1. 模型训练
-
-#### 基线模型训练
+### 1. 生成测试数据集
 ```bash
-python train_code/qwen_baseline.py
+python train_code/generate_test_dataset.py
 ```
 
-#### 改进版本训练
+### 2. 运行消融实验
 ```bash
-# 训练样本15000，5个epoch，alpha=16
-python "train_code/qwen_improve(size=15000 epoch=5 alpha=16).py"
+# LoRA-QV (推荐，效果最佳)
+python train_code/qwen_lora_7k_qv.py
 
-# 训练样本25000，1个epoch，alpha=32
-python "train_code/qwen_improve(size=25000 epoch=1 alpha=32).py"
+# LoRA-QKV
+python train_code/qwen_lora_7k_qkv.py
 
-# 训练样本50000，1个epoch，alpha=32
-python "train_code/qwen_improve(size=50000 epoch=1 alpha=32).py"
+# LoRA-QKVO
+python train_code/qwen_lora_7k_qkvo.py
+
+# 全参数微调
+python train_code/qwen_full_finetune_7k.py
 ```
 
-### 2. 模型评估
-
-#### 清理评估数据
+### 3. 评估
 ```bash
-python evaluate/src/clean_saved_data.py
+# GPT-4 自动评估（需配置 openai_key.txt）
+python evaluate/src/evaluate_ablation.py
+
+# 训练指标对比可视化
+python evaluate/src/compare_ablation.py
 ```
-
-#### 运行评估脚本
-```bash
-python evaluate/src/evaluate_saved_data.py
-```
-
-### 3. 结果可视化
-
-评估脚本会自动生成可视化图表，保存在`evaluate/evaluation_plots/`目录中。
-
-## 实验结果
-
-### 模型性能对比
-
-根据ChatGPT自动评估结果，各模型在中文医学问答任务上的表现如下：
-
-| 模型 | 训练样本数 | Epoch | LoRA Alpha | 平均得分 | 性能表现 |
-|------|------------|-------|------------|----------|----------|
-| Baseline | 默认 | 默认 | 默认 | - | 基线性能 |
-| Phoenix | - | - | - | - | 对话模板优化 |
-| Qwen Improve 1 | 15,000 | 5 | 16 | - | 多轮训练 |
-| Qwen Improve 2 | 25,000 | 1 | 32 | - | 中等数据量 |
-| Qwen Improve 3 | 50,000 | 1 | 32 | - | 大数据量 |
-
-### 关键发现
-
-1. **数据量影响**: 增加训练数据量显著提升模型在医学问答任务上的表现
-2. **LoRA参数优化**: 较高的alpha值(32)在大数据量训练中表现更好
-3. **训练策略**: 单epoch大数据量训练vs多epoch小数据量训练的权衡
-4. **对话模板**: Phoenix模板对对话质量有明显改善
-
-### 训练损失曲线
-
-每个模型的训练过程都生成了详细的损失曲线图，保存在对应的`train_result/*/Training and Validation Loss Curves.png`文件中。
 
 ## 技术细节
 
-### LoRA配置
+### LoRA 配置
 ```python
-lora_config = LoraConfig(
-    r=16,                    # rank
-    lora_alpha=32,          # scaling parameter
-    target_modules=["q_proj", "v_proj"],
-    lora_dropout=0.1,
-    bias="none",
-    task_type="CAUSAL_LM"
+LoraConfig(
+    r=16, lora_alpha=16, lora_dropout=0.05,
+    target_modules=["q_proj", "v_proj"],  # 或 QKV / QKVO
+    bias="none", task_type="CAUSAL_LM"
 )
 ```
 
-### 量化配置
+### 量化配置 (QLoRA)
 ```python
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.bfloat16
+BitsAndBytesConfig(
+    load_in_4bit=True, bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16
 )
 ```
 
-### 训练参数
-```python
-training_args = TrainingArguments(
-    output_dir="./results",
-    num_train_epochs=1,
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,
-    warmup_steps=100,
-    learning_rate=2e-4,
-    fp16=True,
-    logging_steps=10,
-    save_strategy="epoch"
-)
+### 数据格式 (ChatML)
+```
+<|im_start|>system
+你是一个专业的医疗健康助手，能够准确回答各类医学问题。<|im_end|>
+<|im_start|>user
+{question}<|im_end|>
+<|im_start|>assistant
+{answer}<|im_end|>
 ```
 
 ## 评估方法
 
-### ChatGPT自动评估
-- 使用OpenAI GPT-4作为评估器
-- 对模型输出进行多维度评估：准确性、相关性、完整性
-- 生成详细的评估报告和可视化图表
-
-### 评估指标
-- **准确性**: 医学知识的正确性
-- **相关性**: 回答与问题的相关程度
-- **完整性**: 回答的全面性和详细程度
-- **流畅性**: 语言表达的自然程度
-
-## 文件说明
-
-### 训练脚本
-- `qwen_baseline.py`: 基线模型，使用默认参数配置
-- `phoenix_lora.py`: 使用Phoenix对话模板的模型
-- `llama_lora.py`: 基于Llama架构的对比实验
-- `qwen_improve_*.py`: 不同参数配置的改进版本
-
-### 评估脚本
-- `evaluate_saved_data.py`: 主要评估脚本，调用ChatGPT API
-- `evaluate_saved_data_score.py`: 评分计算脚本
-- `clean_saved_data.py`: 数据清理工具
-
-### 结果文件
-- `saved_data.json`: 模型推理结果
-- `Training and Validation Loss Curves.png`: 训练损失曲线
-- `evaluation_results.json`: 详细评估结果
-- `evaluation_plots/*.png`: 性能对比图表
-
-## 注意事项
-
-1. **GPU要求**: 建议使用至少8GB显存的GPU进行训练
-2. **内存优化**: 使用4位量化技术减少内存占用
-3. **API配置**: 需要有效的OpenAI API密钥进行评估
-4. **数据路径**: 确保数据集路径配置正确
-
-## 贡献者
-
-- 项目作者: [End_donkey]
-- 课程: 香港中文大学深圳自然语言处理
-- 时间: 2025年秋季学期
-
-## 许可证
-
-本项目仅用于学术研究和课程作业，请遵循相关的学术诚信政策。
+采用 **GPT-4 Pairwise Comparison** 评估：
+- 从 500 条测试集中随机采样 50 条
+- 将 baseline（原始数据集参考答案）与模型生成答案送入 GPT-4
+- GPT-4 从 helpfulness、relevance、accuracy、detail 四个维度判断优劣
+- 统计模型胜率作为最终指标
 
 ## 参考文献
 
-1. Hu, E. J., et al. (2021). LoRA: Low-Rank Adaptation of Large Language Models.
-2. Qwen Team. (2023). Qwen Technical Report.
-3. Huatuo26M: A Large-scale Chinese Medical QA Dataset.
+1. Hu, E. J., et al. (2021). *LoRA: Low-Rank Adaptation of Large Language Models*. arXiv:2106.09685
+2. Dettmers, T., et al. (2023). *QLoRA: Efficient Finetuning of Quantized Language Models*. arXiv:2305.14314
+3. Qwen Team. (2024). *Qwen Technical Report*.
+4. FreedomIntelligence. *Huatuo26M: A Large-scale Chinese Medical QA Dataset*.
+
+## License
+
+MIT License
