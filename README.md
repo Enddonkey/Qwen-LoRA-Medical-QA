@@ -2,6 +2,53 @@
 
 基于 **Qwen3-4B-Instruct** 的中文医学问答微调项目，系统性地探索 LoRA 参数高效微调与全参数微调的性能差异，并通过消融实验分析不同 LoRA target modules 配置的影响。
 
+## 整体流程
+
+```mermaid
+graph TD
+    A[("📦 Huatuo26M-Lite<br/>中文医学问答数据集")] --> B["🔀 数据划分"]
+    B --> C["训练集<br/>7000 条 (前7000条)"]
+    B --> D["测试集<br/>500 条 (offset=100000)"]
+
+    E[("🤖 Qwen3-4B-Instruct<br/>预训练模型")] --> F{"微调方法选择"}
+
+    C --> F
+
+    F -->|"QLoRA 4-bit"| G["LoRA 消融实验"]
+    F -->|"bf16 AdamW"| H["全参数微调"]
+
+    G --> G1["LoRA-QV<br/>q_proj, v_proj<br/>5.9M params"]
+    G --> G2["LoRA-QKV<br/>q_proj, k_proj, v_proj<br/>7.96M params"]
+    G --> G3["LoRA-QKVO<br/>q_proj, k_proj, v_proj, o_proj<br/>11.8M params"]
+
+    H --> H1["Full Fine-Tune<br/>ALL modules<br/>3839M params"]
+
+    G1 --> I["📊 训练指标记录<br/>Loss / GPU / 时间"]
+    G2 --> I
+    G3 --> I
+    H1 --> I
+
+    G1 --> J["🔍 模型推理<br/>500条测试集生成回答"]
+    G2 --> J
+    G3 --> J
+    H1 --> J
+
+    D --> K["📝 GPT-4 Pairwise Evaluation"]
+    J --> K
+
+    K --> L["📈 评估结果<br/>胜率 / 对比分析"]
+    I --> M["📉 训练对比可视化<br/>Loss曲线 / GPU / 参数量"]
+
+    L --> N(("🏆 最终结论"))
+    M --> N
+
+    style A fill:#e1f5fe,stroke:#0288d1
+    style E fill:#f3e5f5,stroke:#7b1fa2
+    style N fill:#e8f5e9,stroke:#388e3c
+    style G fill:#fff3e0,stroke:#f57c00
+    style H fill:#fce4ec,stroke:#c62828
+```
+
 ## 项目概述
 
 本项目在 Huatuo26M-Lite 中文医学问答数据集上对 Qwen3-4B-Instruct 进行监督微调，核心实验包括：
@@ -150,6 +197,40 @@ BitsAndBytesConfig(
 ## 评估方法
 
 采用 **GPT-4 Pairwise Comparison** 评估：
+
+```mermaid
+graph LR
+    A["测试集<br/>500条 QA"] -->|"随机采样50条"| B["采样子集"]
+    B --> C["模型推理<br/>生成回答"]
+    B --> D["Baseline<br/>参考答案"]
+
+    C --> E["GPT-4 评判"]
+    D --> E
+
+    E --> F{"逐条对比"}
+    F -->|"4个维度"| G["Helpfulness<br/>有用性"]
+    F -->|"4个维度"| H["Relevance<br/>相关性"]
+    F -->|"4个维度"| I["Accuracy<br/>准确性"]
+    F -->|"4个维度"| J["Detail<br/>详细程度"]
+
+    G --> K["综合判定"]
+    H --> K
+    I --> K
+    J --> K
+
+    K --> L["Model Better ✅"]
+    K --> M["Baseline Better ❌"]
+    K --> N["Equal 🟰"]
+
+    L --> O["📊 统计胜率"]
+    M --> O
+    N --> O
+
+    style E fill:#fff3e0,stroke:#f57c00
+    style O fill:#e8f5e9,stroke:#388e3c
+```
+
+评估流程说明：
 - 从 500 条测试集中随机采样 50 条
 - 将 baseline（原始数据集参考答案）与模型生成答案送入 GPT-4
 - GPT-4 从 helpfulness、relevance、accuracy、detail 四个维度判断优劣
