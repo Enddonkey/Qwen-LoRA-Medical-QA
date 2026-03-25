@@ -1,0 +1,1015 @@
+{
+  "experiment_name": "lora_7k_qkv",
+  "finetune_method": "LoRA (QLoRA 4-bit)",
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj"
+  ],
+  "train_sample_size": 7000,
+  "lora_r": 16,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+  "learning_rate": 0.0002,
+  "num_epochs": 1,
+  "batch_size": 8,
+  "gradient_accumulation_steps": 4,
+  "trainable_params": 7962624,
+  "total_params": 2213772800,
+  "trainable_ratio": "0.3597%",
+  "training_time_sec": 1837.57,
+  "training_time_min": 30.63,
+  "peak_gpu_memory_gb": 15.35,
+  "eval_loss": 1.7816901206970215,
+  "perplexity": 5.94,
+  "train_loss_history": [
+    {
+      "step": 5,
+      "loss": 3.267
+    },
+    {
+      "step": 10,
+      "loss": 2.755
+    },
+    {
+      "step": 15,
+      "loss": 2.1944
+    },
+    {
+      "step": 20,
+      "loss": 1.9871
+    },
+    {
+      "step": 25,
+      "loss": 1.9838
+    },
+    {
+      "step": 30,
+      "loss": 2.0084
+    },
+    {
+      "step": 35,
+      "loss": 1.8989
+    },
+    {
+      "step": 40,
+      "loss": 1.8284
+    },
+    {
+      "step": 45,
+      "loss": 1.87
+    },
+    {
+      "step": 50,
+      "loss": 1.8546
+    },
+    {
+      "step": 55,
+      "loss": 1.8228
+    },
+    {
+      "step": 60,
+      "loss": 1.8954
+    },
+    {
+      "step": 65,
+      "loss": 1.8763
+    },
+    {
+      "step": 70,
+      "loss": 1.9035
+    },
+    {
+      "step": 75,
+      "loss": 1.7899
+    },
+    {
+      "step": 80,
+      "loss": 1.8261
+    },
+    {
+      "step": 85,
+      "loss": 1.8334
+    },
+    {
+      "step": 90,
+      "loss": 1.8223
+    },
+    {
+      "step": 95,
+      "loss": 1.9072
+    },
+    {
+      "step": 100,
+      "loss": 1.7234
+    },
+    {
+      "step": 105,
+      "loss": 1.7757
+    },
+    {
+      "step": 110,
+      "loss": 1.8621
+    },
+    {
+      "step": 115,
+      "loss": 1.7435
+    },
+    {
+      "step": 120,
+      "loss": 1.7875
+    },
+    {
+      "step": 125,
+      "loss": 1.7886
+    },
+    {
+      "step": 130,
+      "loss": 1.8145
+    },
+    {
+      "step": 135,
+      "loss": 1.8884
+    },
+    {
+      "step": 140,
+      "loss": 1.7951
+    },
+    {
+      "step": 145,
+      "loss": 1.8024
+    },
+    {
+      "step": 150,
+      "loss": 1.7704
+    },
+    {
+      "step": 155,
+      "loss": 1.8055
+    },
+    {
+      "step": 160,
+      "loss": 1.8303
+    },
+    {
+      "step": 165,
+      "loss": 1.7857
+    },
+    {
+      "step": 170,
+      "loss": 1.7953
+    },
+    {
+      "step": 175,
+      "loss": 1.7712
+    },
+    {
+      "step": 180,
+      "loss": 1.9024
+    },
+    {
+      "step": 185,
+      "loss": 1.8159
+    },
+    {
+      "step": 190,
+      "loss": 1.7639
+    },
+    {
+      "step": 195,
+      "loss": 1.8062
+    }
+  ],
+  "val_loss_history": [
+    {
+      "step": 20,
+      "eval_loss": 1.969265341758728
+    },
+    {
+      "step": 40,
+      "eval_loss": 1.8408067226409912
+    },
+    {
+      "step": 60,
+      "eval_loss": 1.8127244710922241
+    },
+    {
+      "step": 80,
+      "eval_loss": 1.7994182109832764
+    },
+    {
+      "step": 100,
+      "eval_loss": 1.7914575338363647
+    },
+    {
+      "step": 120,
+      "eval_loss": 1.7867732048034668
+    },
+    {
+      "step": 140,
+      "eval_loss": 1.7844359874725342
+    },
+    {
+      "step": 160,
+      "eval_loss": 1.7822575569152832
+    },
+    {
+      "step": 180,
+      "eval_loss": 1.7816990613937378
+    },
+    {
+      "step": 197,
+      "eval_loss": 1.7816901206970215
+    }
+  ],
+  "gpu_memory_history": [
+    {
+      "step": 1,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 2,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 3,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 4,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 5,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 6,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 7,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 8,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 9,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 10,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 11,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 12,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 13,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 14,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 15,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 16,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 17,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 18,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 19,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 20,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 21,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 22,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 23,
+      "gpu_memory_gb": 12.26
+    },
+    {
+      "step": 24,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 25,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 26,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 27,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 28,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 29,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 30,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 31,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 32,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 33,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 34,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 35,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 36,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 37,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 38,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 39,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 40,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 41,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 42,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 43,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 44,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 45,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 46,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 47,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 48,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 49,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 50,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 51,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 52,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 53,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 54,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 55,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 56,
+      "gpu_memory_gb": 12.65
+    },
+    {
+      "step": 57,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 58,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 59,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 60,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 61,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 62,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 63,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 64,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 65,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 66,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 67,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 68,
+      "gpu_memory_gb": 13.26
+    },
+    {
+      "step": 69,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 70,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 71,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 72,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 73,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 74,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 75,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 76,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 77,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 78,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 79,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 80,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 81,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 82,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 83,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 84,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 85,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 86,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 87,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 88,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 89,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 90,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 91,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 92,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 93,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 94,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 95,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 96,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 97,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 98,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 99,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 100,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 101,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 102,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 103,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 104,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 105,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 106,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 107,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 108,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 109,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 110,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 111,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 112,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 113,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 114,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 115,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 116,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 117,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 118,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 119,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 120,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 121,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 122,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 123,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 124,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 125,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 126,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 127,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 128,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 129,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 130,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 131,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 132,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 133,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 134,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 135,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 136,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 137,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 138,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 139,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 140,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 141,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 142,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 143,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 144,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 145,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 146,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 147,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 148,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 149,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 150,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 151,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 152,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 153,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 154,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 155,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 156,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 157,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 158,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 159,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 160,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 161,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 162,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 163,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 164,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 165,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 166,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 167,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 168,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 169,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 170,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 171,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 172,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 173,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 174,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 175,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 176,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 177,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 178,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 179,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 180,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 181,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 182,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 183,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 184,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 185,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 186,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 187,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 188,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 189,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 190,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 191,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 192,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 193,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 194,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 195,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 196,
+      "gpu_memory_gb": 15.35
+    },
+    {
+      "step": 197,
+      "gpu_memory_gb": 15.35
+    }
+  ]
+}

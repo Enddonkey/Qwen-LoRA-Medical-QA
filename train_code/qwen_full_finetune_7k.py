@@ -9,11 +9,11 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 CFG = {
     'experiment_name': 'full_finetune_7k',
-    'finetune_method': 'Full Fine-tuning (bf16, 8bit-paged-optimizer)',
+    'finetune_method': 'Full Fine-tuning (bf16, AdamW)',
     'target_modules': 'ALL',
     'train_sample_size': 7000,
-    'learning_rate': 2e-6,  # 全参数微调用更小的学习率
-    'num_epochs': 1,
+    'learning_rate': 2e-5,  # 全参数微调用较小的学习率
+    'num_epochs': 3,
     'batch_size': 1,  # 全参数微调显存极大，必须用最小batch
     'gradient_accumulation_steps': 32,  # 保持等效batch=32
 }
@@ -30,15 +30,15 @@ def get_args():
         output_dir=f"{RESULT_DIR}/checkpoints", num_train_epochs=CFG['num_epochs'],
         per_device_train_batch_size=CFG['batch_size'], per_device_eval_batch_size=CFG['batch_size'],
         gradient_accumulation_steps=CFG['gradient_accumulation_steps'],
-        optim='paged_adamw_8bit',  # 8-bit分页优化器：自动将优化器状态卸载到CPU，大幅节省显存
+        optim='adamw_8bit',  # 8-bit AdamW优化器
         save_strategy="steps", eval_strategy="steps",
-        save_steps=50, eval_steps=50, logging_steps=10,
-        learning_rate=CFG['learning_rate'], weight_decay=0.001, warmup_ratio=0.1,
-        lr_scheduler_type="cosine", bf16=True, group_by_length=True,
+        save_steps=100, eval_steps=20, logging_steps=5,
+        learning_rate=CFG['learning_rate'], weight_decay=0.001, warmup_ratio=0.03,
+        lr_scheduler_type="cosine", bf16=True, group_by_length=False,
         gradient_checkpointing=True, report_to="none",
         max_grad_norm=1.0,  # 梯度裁剪，防止显存峰值过高
         save_total_limit=2,  # 全参数模型很大，限制checkpoint数量
-        dataloader_num_workers=4, dataloader_pin_memory=True)
+        dataloader_num_workers=0, dataloader_pin_memory=True)
 
 
 def main():

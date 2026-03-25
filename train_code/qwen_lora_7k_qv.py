@@ -14,16 +14,16 @@ CFG = {
     'finetune_method': 'LoRA (QLoRA 4-bit)',
     'target_modules': ['q_proj', 'v_proj'],
     'train_sample_size': 7000,
-    'lora_r': 8, 'lora_alpha': 32, 'lora_dropout': 0.05,
-    'learning_rate': 1e-5, 'num_epochs': 1,
-    'batch_size': 16, 'gradient_accumulation_steps': 2,
+    'lora_r': 16, 'lora_alpha': 16, 'lora_dropout': 0.05,
+    'learning_rate': 2e-4, 'num_epochs': 1,
+    'batch_size': 8, 'gradient_accumulation_steps': 4,
 }
 MODEL_ID = "C:/Users/Administrator/.cache/huggingface/hub/Qwen3-4B-Instruct-2507"
 RESULT_DIR = f"./train_result/{CFG['experiment_name']}"
 LORA_PATH = f"{RESULT_DIR}/lora"
 METRICS_PATH = f"{RESULT_DIR}/training_metrics.json"
 SAVED_DATA_PATH = f"{RESULT_DIR}/saved_data.json"
-TEST_FILE = "zh_med_1000.json"
+TEST_FILE = "zh_med_500.json"
 
 
 def get_args():
@@ -31,12 +31,12 @@ def get_args():
         output_dir=f"{RESULT_DIR}/checkpoints", num_train_epochs=CFG['num_epochs'],
         per_device_train_batch_size=CFG['batch_size'], per_device_eval_batch_size=CFG['batch_size'],
         gradient_accumulation_steps=CFG['gradient_accumulation_steps'],
-        optim='paged_adamw_32bit', save_strategy="steps", eval_strategy="steps",
-        save_steps=50, eval_steps=50, logging_steps=10,
-        learning_rate=CFG['learning_rate'], weight_decay=0.001, warmup_ratio=0.1,
-        lr_scheduler_type="cosine", bf16=True, group_by_length=True,
+        optim='adamw_8bit', save_strategy="steps", eval_strategy="steps",
+        save_steps=100, eval_steps=20, logging_steps=5,
+        learning_rate=CFG['learning_rate'], weight_decay=0.001, warmup_ratio=0.03,
+        lr_scheduler_type="cosine", bf16=True, group_by_length=False,
         gradient_checkpointing=True, report_to="none",
-        dataloader_num_workers=4, dataloader_pin_memory=True)
+        dataloader_num_workers=0, dataloader_pin_memory=True)
 
 
 def main():

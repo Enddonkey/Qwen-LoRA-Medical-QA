@@ -40,7 +40,7 @@ Assistant 2: {model_answer}
 """
     try:
         response = client.chat.completions.create(
-            model="gpt-4", temperature=0.3, max_tokens=3000,
+            model="gpt-4", temperature=0.3, max_completion_tokens=3000,
             messages=[
                 {"role": "system", "content": "You are an expert evaluator who provides objective, unbiased comparisons between AI assistant responses."},
                 {"role": "user", "content": prompt}
@@ -167,7 +167,6 @@ def main():
         'train_result/lora_7k_qv',
         'train_result/lora_7k_qkv',
         'train_result/lora_7k_qkvo',
-        'train_result/full_finetune_7k',
     ]
 
     all_results = []

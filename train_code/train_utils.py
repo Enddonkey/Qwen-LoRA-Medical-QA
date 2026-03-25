@@ -298,10 +298,11 @@ def save_metrics(cfg, t_params, total_params, t_time, peak_mem, gpu_recs, eval_m
 
 
 @torch.no_grad()
-def generate_answers(query_list, tokenizer, model, use_chatml=True):
-    """生成回答
+def generate_answers(query_list, tokenizer, model, use_chatml=True, max_new_tokens=512):
+    """逐条生成回答（fp16模型推理，速度快且可靠）
     Args:
         use_chatml: True=使用ChatML格式, False=使用Phoenix格式
+        max_new_tokens: 最大生成token数
     """
     if use_chatml:
         formatted = [chatml_format_query(q) for q in query_list]
@@ -313,16 +314,19 @@ def generate_answers(query_list, tokenizer, model, use_chatml=True):
             return conv.get_prompt()
         formatted = [conv_fmt(q) for q in query_list]
 
-    input_ids = tokenizer(formatted, padding=True, truncation=True, return_tensors="pt",
-                          add_special_tokens=False).input_ids.to("cuda")
-    output_ids = []
-    for i in tqdm(range(len(input_ids))):
-        out = model.generate(input_ids=input_ids[i:i+1], do_sample=False,
-                             max_new_tokens=512, repetition_penalty=1.0)
-        output_ids.append(out[0])
-    responses = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
-    return [r[len(tokenizer.decode(input_ids[i], skip_special_tokens=True)):].strip()
-            for i, r in enumerate(responses)]
+    all_responses = []
+    for i in tqdm(range(len(formatted)), desc="推理中"):
+        inputs = tokenizer(formatted[i], return_tensors="pt", add_special_tokens=False)
+        input_ids = inputs.input_ids.to("cuda")
+        input_len = input_ids.shape[1]
+        outputs = model.generate(
+            input_ids=input_ids,
+            attention_mask=torch.ones_like(input_ids),
+            do_sample=False, max_new_tokens=max_new_tokens, repetition_penalty=1.0)
+        generated_ids = outputs[0][input_len:]
+        response = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+        all_responses.append(response)
+    return all_responses
 
 
 def get_bnb_config():
@@ -332,11 +336,23 @@ def get_bnb_config():
         bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16)
 
 
-def load_inference_model(model_id, lora_path, tokenizer):
-    bnb = get_bnb_config()
-    model = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=bnb, device_map={"": 0})
-    model = PeftModel.from_pretrained(model, lora_path)
-    model = model.merge_and_unload()
+def load_inference_model(model_id, lora_path, tokenizer, use_fp16=True):
+    """加载推理模型
+    Args:
+        use_fp16: True=fp16加载(快但占显存~8GB), False=4bit加载(慢但省显存)
+    """
+    if use_fp16:
+        print("加载fp16模型用于推理（速度更快）...")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id, torch_dtype=torch.float16, device_map={"": 0})
+        model = PeftModel.from_pretrained(model, lora_path)
+        model = model.merge_and_unload()
+    else:
+        print("加载4-bit量化模型用于推理...")
+        bnb = get_bnb_config()
+        model = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=bnb, device_map={"": 0})
+        model = PeftModel.from_pretrained(model, lora_path)
+        model = model.merge_and_unload()
     model.config.max_length = 512
     model.eval()
     return model
